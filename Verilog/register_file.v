@@ -23,17 +23,26 @@ module register_file #(
 
 
  
-    always @(negedge clk or posedge rst) begin
+    always @(negedge clk or posedge rst)
+        begin
+            if (rst) begin
+            registers[0] <= {N{1'b0}};
+            end
+            else if (reg_write == 1'b1)
+                begin
+                    registers[write_register] <= write_data;
+                end
+        end
+
+endmodule
+
+
+
+/*
         if (rst) begin
             for (i = 0; i < 16; i = i + 1) begin
                 registers[i] <= i;
             end
         end
-        else if (reg_write  ) begin
-            registers[write_register] <= write_data;
-        end
-
-
-    end
-
-endmodule
+        else 
+        */

@@ -320,5 +320,25 @@ kol kanat (
 	.forward_enable(SW[1])
 );
 
+el barmak (
+	.CLOCK_50(clk),
+	.reset(rst_n),
+	.forward_enable(f_en),
+	.sram_DQ_mem(SRAM_DQ),
+	.sram_ADDR_mem(SRAM_ADDR),
+	.sram_UB_N_mem(SRAM_UB_N),
+	.sram_LB_N_mem(SRAM_LB_N),
+	.sram_WE_N_mem(SRAM_WE_N),
+	.sram_CE_N_mem(SRAM_CE_N),
+	.sram_OE_N_mem(SRAM_OE_N)
+);
+
+
+
+
+
+
+
+
 
 endmodule

@@ -1,4 +1,4 @@
-module exe_stage_reg(
+    module exe_stage_reg(
     input wire clk, rst, en, clr,
     
     input wire wb_enable_in, mem_read_enable_in, mem_write_enable_in,

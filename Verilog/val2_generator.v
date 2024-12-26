@@ -14,7 +14,8 @@ module val2_generator(
     wire [7:0] immediate_value = shift_operand[7:0];
     wire [3:0] rotate_amount = shift_operand[11:8];
 
-    integer i;
+    integer i = 0;
+    // i = 0;
 
     always @(operand_in, shift_operand, is_immediate, sign_extend) begin
         operand_out = 32'b0;

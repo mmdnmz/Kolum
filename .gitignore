@@ -1,8 +1,5 @@
-*.cr.mti
-*.qdb
-*.qpg
-*.qtl
-*.wlf
-*.mpf
-*.qdb
-Questasim/work/
+Questasim
+Quartus/db
+Quartus/incremental_db
+Quartus/output_files
+Verilog.rar

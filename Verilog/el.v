@@ -1,13 +1,17 @@
-module kol (
-	CLOCK_50,
-	reset,
-    forward_enable
+module el (
+input		   	CLOCK_50,
+input	        reset,
+input           forward_enable,
+inout wire [15:0] sram_DQ_mem,
+output wire [17:0] sram_ADDR_mem,
+output wire sram_UB_N_mem,
+output wire sram_LB_N_mem,
+output wire sram_WE_N_mem,
+output wire sram_CE_N_mem,
+output wire sram_OE_N_mem
 );
 
 ////////////////////////	Clock Input	 	////////////////////////
-input		   	CLOCK_50;				//	50 MHz
-input	        reset;						//	Toggle Switch[17:0]
-input           forward_enable;
 wire clk;
 assign clk = CLOCK_50;
 wire rst;
@@ -68,6 +72,10 @@ wire [31:0] alu_res_out_mem;     // ALU result passed to MEM stage
 wire [31:0] val_rm_mem;          // Value for memory operations in MEM stage
 wire [31:0] data_memory_out_mem; // Data read from memory
 wire [3:0] dest_mem;             // Destination register in MEM stage
+wire ready_mem;
+
+/*
+*/
 
 // **WB Stage Wires**
 wire wb_enable_wb;               // Write-back enable signal in WB stage
@@ -113,7 +121,7 @@ if_stage #(
 ) IF (
     .clk(clk),
     .rst(rst),
-    .freeze(Hazard),
+    .freeze(Hazard || ~ready_mem),
     .branch_taken(b_exe),
     .branch_addr(branch_address_exe),
     .pc_plus4(PC_IF),
@@ -124,7 +132,7 @@ if_stage #(
 if_stage_reg IF_REG (
     .clk(clk),
     .rst(rst),
-    .freeze(Hazard),
+    .freeze(Hazard || ~ready_mem),
     .flush(b_exe),
     .pc_in(PC_IF),
     .instruction_in(Instruction_IF),
@@ -164,7 +172,8 @@ id_stage ID (
 id_stage_reg ID_REG (
     .clk(clk),
     .rst(rst),
-    .en(1'b1),
+    .en(ready_mem),
+    // .en(1'b1),
     .clr(b_exe),
     .Pc_Id(pc_id),
     .PcExe(pc_exe),
@@ -231,8 +240,10 @@ exe_stage_reg EXE_REG (
     .rst(rst),
     .Pc_exe(pc_exe),
     .PcMem(pc_mem),
-    .en(1'b1),
-    .clr(b_exe),
+    .en(ready_mem),
+    // .en(1'b1),
+    // .clr(b_exe),
+    .clr(1'b0),
     .wb_enable_in(wb_enable_exe),
     .wb_enable_out(wb_enable_mem),
     .mem_read_enable_in(mem_read_enable_exe),
@@ -247,18 +258,22 @@ exe_stage_reg EXE_REG (
     .dest_out(dest_mem)
 );
 
-// MEM Stage Instantiation
-mem_stage MEM (
+sram_mem MEM_SRAM (
     .clk(clk),
     .rst(rst),
+    .mem_w_en_in(mem_write_enable_mem),
+    .mem_r_en_in(mem_read_enable_mem),
     .alu_res_in(alu_res_out_mem),
-    .val_rm_in(val_rm_mem),
+    .value_rm_in(val_rm_mem),
+    .mem_ready_out(ready_mem),
     .data_memory_out(data_memory_out_mem),
-    .wb_enable_in(wb_enable_mem),
-    .wb_enable_out(wb_enable_mem_out),
-    .mem_write_enable_in(mem_write_enable_mem),
-    .mem_read_enable_in(mem_read_enable_mem)
-    // .mem_read_enable_out(mem_read_enable_wb)
+    .sram_addr_out(sram_ADDR_mem),
+    .sram_ub_n_out(sram_UB_N_mem),
+    .sram_lb_n_out(sram_LB_N_mem),
+    .sram_we_n_out(sram_WE_N_mem),
+    .sram_ce_n_out(sram_CE_N_mem),
+    .sram_oe_n_out(sram_OE_N_mem),
+    .sram_dq_inout(sram_DQ_mem)
 );
 
 // MEM/WB Register Instantiation
@@ -267,9 +282,11 @@ mem_stage_reg MEM_REG (
     .rst(rst),
     .Pc_mem(pc_mem),
     .PcWb(pc_wb),
-    .clr(b_exe),
-    .en(1'b1),
-    .wb_enable_in(wb_enable_mem_out),
+    // .clr(b_exe),
+    .clr(1'b0),
+    .en(ready_mem),
+    // .en(1'b1),
+    .wb_enable_in(wb_enable_mem),
     .mem_read_enable_in(mem_read_enable_mem),
     .alu_res_in(alu_res_out_mem),
     .data_memory_in(data_memory_out_mem),
@@ -308,7 +325,7 @@ hazard_unit Hazard_UNIT (
 );
 
 // Forwarding Unit
-forward_unit forward (
+forward_unit forward(
     .forward_en_in(forward_enable), 
     .src1_in(src1_exe),
     .src2_in(src2_exe), 
