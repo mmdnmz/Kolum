@@ -1,5 +1,8 @@
 Questasim
-Quartus/db
-Quartus/incremental_db
-Quartus/output_files
+Quartus/
 Verilog.rar
+*.rar
+*.qsf
+Quartus/arm.qsf
+Quartus/arm.qsf
+Quartus/arm.qws
