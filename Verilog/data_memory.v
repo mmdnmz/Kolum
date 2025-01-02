@@ -27,10 +27,10 @@ module data_memory(
         end
     end
 
-    always @(mem_read_enable_in or address) begin
+    always @(*) begin
+        result_out = 32'b0;
         if (mem_read_enable_in) begin
             result_out = data_memory_array[address];
         end
     end
-
 endmodule

@@ -1,41 +1,126 @@
-// module s_mem(
+module sram_proc(clk, rst, SRAM_WE_NIn, SRAM_ADDRIn, SRAM_DQInOut);
+    input clk, rst;
+    input SRAM_WE_NIn;
+    input [17:0] SRAM_ADDRIn;
+    inout [15:0] SRAM_DQInOut;
 
-//     input wire clk,
-//     input wire rst,
-//     inout wire [15:0] DQ_mem,
-//     input wire [17:0] ADDR_mem,
-//     input wire UB_N_mem,
-//     input wire LB_N_mem,
-//     input wire WE_N_mem,
-//     input wire CE_N_mem,
-//     input wire OE_N_mem
-// );
+    reg [15:0] memory [0:511];
+    assign SRAM_DQInOut = (SRAM_WE_NIn == 1'b1) ? memory[SRAM_ADDRIn] : 16'dz;
 
-
-
-//     reg s_select = 1'b1;
-
-//     reg [15:0] s_memory [0:17];
-
-//     reg [15:0] s_out;
-//     wire [15:0] w_s_out;
-//     assign w_s_out = s_out;
-
-//     always @(posedge clk) begin
-//         if ((~WE_N_mem)) begin
-//             s_select <= 1'b1;
-//             s_memory [ADDR_mem] <= DQ_mem;
-//         end
-//         else if (WE_N_mem) begin
-//             s_select <= 1'b0;
-//             s_out <= s_memory [ADDR_mem];
-//         end
-//     end
-
-//     mux_2to1 #(16) control_signals_mux (
-//         .a(w_s_out), .b(16'bz), .s(s_select), .out(DQ_mem)
-//     );
+    always @(posedge clk) begin
+        if (SRAM_WE_NIn == 1'b0) 
+            memory[SRAM_ADDRIn] = SRAM_DQInOut;
+    end
+endmodule
 
 
+`define IDLE         6'd0
+`define DATA_LOW     6'd1
+`define DATA_HIGH    6'd2
+`define dumb  6'd3
+`define dumber 6'd4
+`define DONE         6'd5
 
-// endmodule
+module sram_controller_proc(clk, rst, wrEnIn, rdEnIn, addressIn, 
+                      writeDataIn, readDataOut, readyOut, 
+                      SRAM_DQInOut, SRAM_ADDROut, SRAM_UB_NOut, 
+                      SRAM_LB_NOut, SRAM_WE_NOut, SRAM_CE_NOut, SRAM_OE_NOut);
+    input clk, rst;
+    input wrEnIn, rdEnIn;
+    input [31:0] addressIn;
+    input [31:0] writeDataIn;
+    output reg [31:0] readDataOut;
+    output reg readyOut;            // to freeze other stages
+
+    inout [15:0] SRAM_DQInOut;      // SRAM Data bus 16 bits
+    output reg [17:0] SRAM_ADDROut; // SRAM Address bus 18 bits
+    output SRAM_UB_NOut;            // SRAM High-byte data mask
+    output SRAM_LB_NOut;            // SRAM Low-byte data mask
+    output reg SRAM_WE_NOut;        // SRAM Write enable
+    output SRAM_CE_NOut;            // SRAM Chip enable
+    output SRAM_OE_NOut;            // SRAM Output enable
+
+    assign {SRAM_UB_NOut, SRAM_LB_NOut, SRAM_CE_NOut, SRAM_OE_NOut} = 4'b0000;
+
+    wire [31:0] memAddr;
+    assign memAddr = addressIn - 32'd1024;
+
+    wire [17:0] sramLowAddr, sramHighAddr; //, sramUpLowAddess, sramUpHighAddess;
+    // assign sramLowAddr = {memAddr[18:3], 2'd0};
+    assign sramLowAddr = {memAddr[18:2], 1'b0};
+    assign sramHighAddr = sramLowAddr + 18'd1;
+    // assign sramUpLowAddess = sramLowAddr + 18'd2;
+    // assign sramUpHighAddess = sramLowAddr + 18'd3;
+
+    wire [17:0] sramLowAddrWrite, sramHighAddrWrite;
+    assign sramLowAddrWrite = {memAddr[18:2], 1'b0};
+    assign sramHighAddrWrite = sramLowAddrWrite + 18'd1;
+
+    reg [15:0] dq;
+    assign SRAM_DQInOut = wrEnIn ? dq : 16'bz;
+
+    reg [2:0] ps, ns;
+
+    always @(ps or wrEnIn or rdEnIn) begin
+        case (ps)
+            `IDLE        : ns = (wrEnIn == 1'b1 || rdEnIn == 1'b1) ? `DATA_LOW : `IDLE;
+            `DATA_LOW    : ns = `DATA_HIGH;
+            `DATA_HIGH   : ns = `dumb;
+            `dumb : ns = `dumber;
+            `dumber: ns = `DONE;
+            `DONE        : ns = `IDLE;
+        endcase
+    end
+
+    always @(*) begin
+        SRAM_ADDROut = 18'b0;
+        SRAM_WE_NOut = 1'b1;
+        readyOut = 1'b0;
+
+        case (ps)
+            `IDLE: readyOut = ~(wrEnIn | rdEnIn);
+
+            `DATA_LOW: begin
+                SRAM_WE_NOut = ~wrEnIn;
+                if (rdEnIn) begin
+                    SRAM_ADDROut = sramLowAddr;
+                    readDataOut[15:0] <= SRAM_DQInOut;
+                end
+                else if (wrEnIn) begin
+                    SRAM_ADDROut = sramLowAddrWrite;
+                    dq = writeDataIn[15:0];
+                end
+            end
+
+            `DATA_HIGH: begin
+                SRAM_WE_NOut = ~wrEnIn;
+                if (rdEnIn) begin
+                    SRAM_ADDROut = sramHighAddr;
+                    readDataOut[31:16] <= SRAM_DQInOut;
+                end
+                else if (wrEnIn) begin
+                    SRAM_ADDROut = sramHighAddrWrite;
+                    dq = writeDataIn[31:16];
+                end
+            end
+
+            `dumb: begin
+
+            end
+
+            `dumber: begin
+
+            end
+            
+            `DONE: readyOut = 1'b1;
+        endcase
+    end
+
+    always @(posedge clk or posedge rst) begin
+        if (rst) 
+            ps <= `IDLE;
+        else 
+            ps <= ns;
+    end
+    
+endmodule

@@ -1,15 +1,15 @@
 module kol (
-	CLOCK_50,
+	CLOCK,
 	reset,
     forward_enable
 );
 
 ////////////////////////	Clock Input	 	////////////////////////
-input		   	CLOCK_50;				//	50 MHz
+input		   	CLOCK;				//	50 MHz
 input	        reset;						//	Toggle Switch[17:0]
 input           forward_enable;
 wire clk;
-assign clk = CLOCK_50;
+assign clk = CLOCK;
 wire rst;
 assign rst = reset;
 

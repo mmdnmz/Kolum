@@ -6,8 +6,8 @@ module mem_stage(
     output wire [31:0] data_memory_out,
     input wire wb_enable_in,
     output wire wb_enable_out,
-    output wire mem_write_enable_in,
-    output wire mem_read_enable_in,
+    input wire mem_write_enable_in,
+    input wire mem_read_enable_in,
     output wire mem_read_enable_out
 );
 

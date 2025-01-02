@@ -41,7 +41,12 @@ module control_unit(
 
             2'b10: 
                 branch = 1'b1;
-            
+            default: begin
+                 status_out = 1'b0;
+                 write_back_enable = 1'b0;
+                 mem_read_enable = 1'b0;
+                 mem_write_enable = 1'b0;
+            end
         endcase
     end
 endmodule

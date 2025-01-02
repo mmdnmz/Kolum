@@ -1,4 +1,4 @@
-module el (
+module dirsak (
 input		   	CLOCK,
 input	        reset,
 input           forward_enable,
@@ -9,6 +9,9 @@ output wire sram_LB_N_mem,
 output wire sram_WE_N_mem,
 output wire sram_CE_N_mem,
 output wire sram_OE_N_mem
+/*,
+output wire [31:0] s_read_data
+*/
 );
 
 ////////////////////////	Clock Input	 	////////////////////////
@@ -70,7 +73,7 @@ wire mem_read_enable_mem;        // Memory read enable signal in MEM stage
 wire mem_write_enable_mem;       // Memory write enable signal in MEM stage
 wire [31:0] alu_res_out_mem;     // ALU result passed to MEM stage
 wire [31:0] val_rm_mem;          // Value for memory operations in MEM stage
-wire [31:0] data_memory_out_mem; // Data read from memory
+wire [31:0] data_memory_out_mem /* synthesis keep */ ;
 wire [3:0] dest_mem;             // Destination register in MEM stage
 wire ready_mem;
 
@@ -258,22 +261,26 @@ exe_stage_reg EXE_REG (
     .dest_out(dest_mem)
 );
 
-sram_mem_cache MEM_SRAM (
-    .clk(clk),
-    .rst(rst),
-    .mem_w_en_in(mem_write_enable_mem),
-    .mem_r_en_in(mem_read_enable_mem),
-    .alu_res_in(alu_res_out_mem),
-    .value_rm_in(val_rm_mem),
-    .mem_ready_out(ready_mem),
-    .data_memory_out(data_memory_out_mem),
-    .sram_addr_out(sram_ADDR_mem),
-    .sram_ub_n_out(sram_UB_N_mem),
-    .sram_lb_n_out(sram_LB_N_mem),
-    .sram_we_n_out(sram_WE_N_mem),
-    .sram_ce_n_out(sram_CE_N_mem),
-    .sram_oe_n_out(sram_OE_N_mem),
-    .sram_dq_inout(sram_DQ_mem)
+sram_controller_proc sramcontrollerproc(
+    .clk(clk), .rst(rst),
+    .wrEnIn(mem_write_enable_mem),  .rdEnIn(mem_read_enable_mem),
+    .addressIn(alu_res_out_mem),   .writeDataIn(val_rm_mem),
+    .readDataOut(data_memory_out_mem), 
+    
+    .readyOut(ready_mem),
+    .SRAM_DQInOut(sram_DQ_mem),
+    .SRAM_ADDROut(sram_ADDR_mem),
+    .SRAM_UB_NOut(sram_UB_N_mem),
+    .SRAM_LB_NOut(sram_LB_N_mem),
+    .SRAM_WE_NOut(sram_WE_N_mem),
+    .SRAM_CE_NOut(sram_CE_N_mem),
+    .SRAM_OE_NOut(sram_OE_N_mem)
+);
+
+sram_proc sramproc(
+    .clk(clk), .rst(rst), 
+    .SRAM_WE_NIn(sram_WE_N_mem), .SRAM_ADDRIn(sram_ADDR_mem), 
+    .SRAM_DQInOut(sram_DQ_mem)
 );
 
 // MEM/WB Register Instantiation

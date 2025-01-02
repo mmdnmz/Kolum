@@ -304,7 +304,15 @@ inout	[35:0]	GPIO_1;					//	GPIO Connection 1
 /////////////////   Instantiations Begin Here	/////////////////////
 
 
+// wire aa , bb;
+// assign aa = SW[0];
+// assign bb = SW[1];
 
+// wire cc;
+
+// assign cc = aa && bb;
+
+// assign LEDG[0] = cc;
 wire clk;
 wire rst_n;
 wire f_en;
@@ -314,24 +322,24 @@ assign clk = CLOCK_50;
 assign rst_n = SW[0];
 assign f_en = SW[1];
 
-kol kanat (
-	.CLOCK_50(clk),
-	.reset(SW[0]),
-	.forward_enable(SW[1])
-);
+// kol kanat (
+// 	.CLOCK(clk),
+// 	.reset(SW[0]),
+// 	.forward_enable(SW[1])
+// );
 
-el barmak (
-	.CLOCK_50(clk),
-	.reset(rst_n),
-	.forward_enable(f_en),
-	.sram_DQ_mem(SRAM_DQ),
-	.sram_ADDR_mem(SRAM_ADDR),
-	.sram_UB_N_mem(SRAM_UB_N),
-	.sram_LB_N_mem(SRAM_LB_N),
-	.sram_WE_N_mem(SRAM_WE_N),
-	.sram_CE_N_mem(SRAM_CE_N),
-	.sram_OE_N_mem(SRAM_OE_N)
-);
+// dirsak chiyin (
+// 	.CLOCK(clk),
+// 	.reset(rst_n),
+// 	.forward_enable(f_en),
+// 	.sram_DQ_mem(SRAM_DQ),
+// 	.sram_ADDR_mem(SRAM_ADDR),
+// 	.sram_UB_N_mem(SRAM_UB_N),
+// 	.sram_LB_N_mem(SRAM_LB_N),
+// 	.sram_WE_N_mem(SRAM_WE_N),
+// 	.sram_CE_N_mem(SRAM_CE_N),
+// 	.sram_OE_N_mem(SRAM_OE_N)
+// );
 
 
 

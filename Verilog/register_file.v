@@ -12,23 +12,25 @@ module register_file #(
 
     assign read_data1 = registers[read_register1];
     assign read_data2 = registers[read_register2];
-
+    // assign registers [4'b1011] = 32'd8192;
 
 
     integer i;
-    initial begin
-        for (i = 0; i < 16; i = i + 1)
-            registers[i] <= i;
-    end
+    // initial begin
+    //     for (i = 0; i < 16; i = i + 1)
+    //         registers[i] <= i;
+    // end
 
 
  
-    always @(negedge clk or posedge rst)
+    always @(negedge clk)
         begin
-            if (rst) begin
-            registers[0] <= {N{1'b0}};
+        if (rst) begin
+            for (i = 0; i < 16; i = i + 1) begin
+                registers[i] <= i;
             end
-            else if (reg_write == 1'b1)
+        end
+        else if (reg_write == 1'b1)
                 begin
                     registers[write_register] <= write_data;
                 end
